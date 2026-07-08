@@ -5,10 +5,14 @@ directories:
 files:
   - dist/**/*
   - package.json
+publish:
+  provider: github
+  releaseType: release
 win:
   target:
     - nsis
   icon: build/icon.ico
+  artifactName: "${productName}-${version}.${ext}"
 mac:
   target:
     - dmg

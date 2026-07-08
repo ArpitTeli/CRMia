@@ -2,6 +2,8 @@ import { create } from "zustand";
 
 export type TabId = "dashboard" | "kanban" | "developers" | "history" | "settings";
 
+type UpdateStatus = null | "checking" | "available" | "downloaded";
+
 interface Toast {
   id: string;
   message: string;
@@ -13,12 +15,18 @@ interface UIState {
   activeTab: TabId;
   isFullscreen: boolean;
   toasts: Toast[];
+  updateStatus: UpdateStatus;
+  updateVersion: string | null;
+  updateDismissed: boolean;
   setTheme: (theme: "dark" | "light") => void;
   setActiveTab: (tab: TabId) => void;
   toggleFullscreen: () => void;
   exitFullscreen: () => void;
   addToast: (message: string, type: "success" | "error" | "info") => void;
   removeToast: (id: string) => void;
+  setUpdateStatus: (status: UpdateStatus) => void;
+  setUpdateVersion: (version: string | null) => void;
+  dismissUpdate: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -26,6 +34,9 @@ export const useUIStore = create<UIState>((set) => ({
   activeTab: "dashboard",
   isFullscreen: false,
   toasts: [],
+  updateStatus: null,
+  updateVersion: null,
+  updateDismissed: false,
 
   setTheme: (theme) => {
     localStorage.setItem("crm-theme", theme);
@@ -56,4 +67,8 @@ export const useUIStore = create<UIState>((set) => ({
     set((state) => ({
       toasts: state.toasts.filter((t) => t.id !== id),
     })),
+
+  setUpdateStatus: (status) => set({ updateStatus: status }),
+  setUpdateVersion: (version) => set({ updateVersion: version }),
+  dismissUpdate: () => set({ updateDismissed: true }),
 }));

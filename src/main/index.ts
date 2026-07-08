@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "path";
+import { autoUpdater } from "electron-updater";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -36,6 +37,57 @@ function createWindow() {
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
+
+  // ===== Auto-Updater (production only) =====
+  if (app.isPackaged) {
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+
+    // Trigger 1: did-finish-load
+    mainWindow.webContents.on("did-finish-load", () => {
+      autoUpdater.checkForUpdates().catch(() => {});
+    });
+
+    // Trigger 2: immediate check if already loaded
+    if (!mainWindow.webContents.isLoading()) {
+      autoUpdater.checkForUpdates().catch(() => {});
+    }
+
+    // Trigger 3: 3-second fallback
+    setTimeout(() => {
+      autoUpdater.checkForUpdates().catch(() => {});
+    }, 3000);
+
+    autoUpdater.on("checking-for-update", () => {
+      mainWindow?.webContents.send("update:checking");
+    });
+
+    autoUpdater.on("update-available", (info) => {
+      mainWindow?.webContents.send("update:available", {
+        version: info.version,
+      });
+    });
+
+    autoUpdater.on("update-not-available", () => {
+      mainWindow?.webContents.send("update:not-available");
+    });
+
+    autoUpdater.on("download-progress", (progress) => {
+      mainWindow?.webContents.send("update:progress", {
+        percent: progress.percent,
+      });
+    });
+
+    autoUpdater.on("update-downloaded", (info) => {
+      mainWindow?.webContents.send("update:downloaded", {
+        version: info.version,
+      });
+    });
+
+    autoUpdater.on("error", (err) => {
+      console.error("Auto-updater error:", err);
+    });
+  }
 }
 
 app.whenReady().then(() => {
@@ -47,6 +99,11 @@ app.whenReady().then(() => {
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
+});
+
+// ===== Update IPC Handler =====
+ipcMain.handle("update:install", () => {
+  autoUpdater.quitAndInstall(false, true);
 });
 
 // ===== Mock Data for Development =====

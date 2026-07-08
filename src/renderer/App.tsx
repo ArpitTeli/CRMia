@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { useAuthStore } from "./store/authStore";
 import { useUIStore } from "./store/uiStore";
-import { LoginScreen } from "./components/LoginScreen";
 import { Sidebar } from "./components/Sidebar";
 import { DashboardView } from "./components/DashboardView";
 import { KanbanView } from "./components/KanbanView";
@@ -10,11 +9,12 @@ import { HistoryView } from "./components/HistoryView";
 import { SettingsView } from "./components/SettingsView";
 import { LeadDetailPanel } from "./components/LeadDetailPanel";
 import { ToastContainer } from "./components/ToastContainer";
+import { UpdateBanner } from "./components/UpdateBanner";
 import { useLeadsStore } from "./store/leadsStore";
 
 function App() {
   const { isLoggedIn } = useAuthStore();
-  const { activeTab, theme, isFullscreen, exitFullscreen } = useUIStore();
+  const { activeTab, theme, isFullscreen, exitFullscreen, setUpdateStatus, setUpdateVersion } = useUIStore();
   const { selectedLead, setSelectedLead } = useLeadsStore();
 
   useEffect(() => {
@@ -41,6 +41,20 @@ function App() {
     }
   }, [isLoggedIn]);
 
+  // Update listeners
+  useEffect(() => {
+    window.api.update.onChecking(() => setUpdateStatus("checking"));
+    window.api.update.onAvailable((data) => {
+      setUpdateStatus("available");
+      setUpdateVersion(data.version);
+    });
+    window.api.update.onNotAvailable(() => setUpdateStatus(null));
+    window.api.update.onDownloaded((data) => {
+      setUpdateStatus("downloaded");
+      setUpdateVersion(data.version);
+    });
+  }, []);
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case "dashboard":
@@ -62,6 +76,7 @@ function App() {
     <div className="app-layout">
       {!isFullscreen && <Sidebar />}
       <div className={`main-content ${isFullscreen ? "fullscreen" : ""}`}>
+        <UpdateBanner />
         {renderActiveTab()}
       </div>
       <LeadDetailPanel

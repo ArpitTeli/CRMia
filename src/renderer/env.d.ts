@@ -22,6 +22,14 @@ declare global {
       shell: {
         openExternal: (url: string) => Promise<void>;
       };
+      update: {
+        install: () => Promise<void>;
+        onChecking: (cb: () => void) => void;
+        onAvailable: (cb: (data: { version: string }) => void) => void;
+        onNotAvailable: (cb: () => void) => void;
+        onProgress: (cb: (data: { percent: number }) => void) => void;
+        onDownloaded: (cb: (data: { version: string }) => void) => void;
+      };
     };
   }
 }

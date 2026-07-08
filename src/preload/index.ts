@@ -29,6 +29,18 @@ contextBridge.exposeInMainWorld("api", {
   shell: {
     openExternal: (url: string) => ipcRenderer.invoke("shell:openExternal", url),
   },
+  update: {
+    install: () => ipcRenderer.invoke("update:install"),
+    onChecking: (cb: () => void) => ipcRenderer.on("update:checking", () => cb()),
+    onAvailable: (cb: (data: { version: string }) => void) =>
+      ipcRenderer.on("update:available", (_e, d) => cb(d)),
+    onNotAvailable: (cb: () => void) =>
+      ipcRenderer.on("update:not-available", () => cb()),
+    onProgress: (cb: (data: { percent: number }) => void) =>
+      ipcRenderer.on("update:progress", (_e, d) => cb(d)),
+    onDownloaded: (cb: (data: { version: string }) => void) =>
+      ipcRenderer.on("update:downloaded", (_e, d) => cb(d)),
+  },
 });
 
 export type ElectronAPI = {
@@ -52,5 +64,13 @@ export type ElectronAPI = {
   };
   shell: {
     openExternal: (url: string) => Promise<void>;
+  };
+  update: {
+    install: () => Promise<void>;
+    onChecking: (cb: () => void) => void;
+    onAvailable: (cb: (data: { version: string }) => void) => void;
+    onNotAvailable: (cb: () => void) => void;
+    onProgress: (cb: (data: { percent: number }) => void) => void;
+    onDownloaded: (cb: (data: { version: string }) => void) => void;
   };
 };
